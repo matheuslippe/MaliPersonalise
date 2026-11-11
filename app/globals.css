@@ -1,26 +1,32 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Tokens extraídos do Figma "Mali Personalizê — Landing Page" */
+@theme {
+  --color-wine: #570f26;      /* títulos, logo */
+  --color-rose: #d45270;      /* CTA, destaques */
+  --color-rose-dark: #b8405c; /* hover do CTA */
+  --color-ink: #6e404d;       /* texto corrido */
+  --color-cream: #fff7f5;     /* fundo da página */
+  --color-blush: #fae8e8;     /* barra promo, categorias, como encomendar */
+  --color-sand: #f7e8e0;      /* hero */
+  --color-shell: #fcf5f2;     /* CTA de contato */
+  --color-petal: #f7dee0;     /* rodapé */
+  --color-line: #e3b8c2;      /* divisores */
+  --color-photo: #f0d4d1;     /* placeholder de foto */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --font-serif: var(--font-tinos), "Times New Roman", serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --radius-card: 14px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-rose);
+  outline-offset: 2px;
 }
