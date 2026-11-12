@@ -273,6 +273,11 @@ export function CheckoutForm({ pickupEnabled, pickupAddress }: { pickupEnabled: 
           {submitting ? "Abrindo pagamento…" : "Ir para o pagamento"} <span aria-hidden>→</span>
         </Button>
         <p className="mt-3 text-center text-[13px] text-ink">Pagamento seguro pelo Mercado Pago: Pix, cartão ou boleto.</p>
+        <p className="mt-2 text-center text-[12px] text-ink">
+          Ao continuar, você concorda com a{" "}
+          <Link href="/politicas/trocas" className="underline underline-offset-2 hover:text-rose">política de trocas</Link> e a{" "}
+          <Link href="/politicas/privacidade" className="underline underline-offset-2 hover:text-rose">política de privacidade</Link>.
+        </p>
       </aside>
     </form>
   );

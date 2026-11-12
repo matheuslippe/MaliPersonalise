@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkoutSchema, isValidCpf } from "@/lib/checkout-schema";
+import { checkoutSchema, isValidCnpj, isValidCpf } from "@/lib/checkout-schema";
 import { lineKey } from "@/lib/cart-store";
 import { parseBRL } from "@/lib/money";
 
@@ -38,5 +38,14 @@ describe("parseBRL", () => {
     expect(parseBRL("49,90")).toBe(4990);
     expect(parseBRL("R$ 1.049,90")).toBe(104990);
     expect(parseBRL("35")).toBe(3500);
+  });
+});
+
+describe("isValidCnpj", () => {
+  it("valida dígitos verificadores", () => {
+    expect(isValidCnpj("11.222.333/0001-81")).toBe(true);
+    expect(isValidCnpj("11.222.333/0001-80")).toBe(false);
+    expect(isValidCnpj("00.000.000/0000-00")).toBe(false);
+    expect(isValidCnpj("123")).toBe(false);
   });
 });

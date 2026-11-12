@@ -11,6 +11,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/produtos`, changeFrequency: "weekly", priority: 0.9 },
     { url: `${base}/como-encomendar`, changeFrequency: "monthly" },
     { url: `${base}/contato`, changeFrequency: "monthly" },
+    { url: `${base}/politicas/trocas`, changeFrequency: "yearly" },
+    { url: `${base}/politicas/privacidade`, changeFrequency: "yearly" },
     ...products.map((p) => ({ url: `${base}/produtos/${p.slug}`, lastModified: p.createdAt, priority: 0.8 })),
   ];
 }

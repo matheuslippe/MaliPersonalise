@@ -117,6 +117,11 @@ export interface Settings {
   originCep: string;
   pickupEnabled: boolean;
   pickupAddress: string;
+  // Dados obrigatórios de loja virtual (Decreto 7.962/2013)
+  legalName: string;
+  cnpj: string; // apenas dígitos
+  address: string;
+  contactEmail: string;
 }
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
