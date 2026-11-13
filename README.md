@@ -1,5 +1,7 @@
 # Mali Personalizê — loja virtual
 
+> 🚀 **Vai colocar no ar?** Siga o [checklist de lançamento](LANCAMENTO.md).
+
 Site com catálogo e venda direta de papelaria personalizada (agendas, planners, bottons, lembrancinhas), seguindo o design do Figma.
 
 **Stack:** Next.js 16 (App Router) · Tailwind CSS 4 · Supabase (Postgres, Storage, Auth) · Mercado Pago Checkout Pro · Melhor Envio · e-mail por SMTP (Hostinger) · hospedagem Node.js na Hostinger.
