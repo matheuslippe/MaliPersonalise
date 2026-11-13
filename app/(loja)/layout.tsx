@@ -17,7 +17,7 @@ export default async function StoreLayout({ children }: LayoutProps<"/">) {
       <main id="conteudo" className="flex-1">
         {children}
       </main>
-      <Footer instagram={settings.instagram} />
+      <Footer settings={settings} />
     </>
   );
 }

@@ -124,4 +124,8 @@ export const defaultSettings: Settings = {
   originCep: "",
   pickupEnabled: false,
   pickupAddress: "",
+  legalName: "",
+  cnpj: "",
+  address: "",
+  contactEmail: "",
 };

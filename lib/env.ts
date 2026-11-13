@@ -10,8 +10,11 @@ export const env = {
   melhorEnvioToken: process.env.MELHOR_ENVIO_TOKEN,
   melhorEnvioSandbox: process.env.MELHOR_ENVIO_SANDBOX !== "false",
   melhorEnvioUserAgent: process.env.MELHOR_ENVIO_USER_AGENT ?? "Mali Personalize",
-  resendApiKey: process.env.RESEND_API_KEY,
-  emailFrom: process.env.EMAIL_FROM ?? "Mali Personalizê <pedidos@example.com>",
+  smtpHost: process.env.SMTP_HOST,
+  smtpPort: Number(process.env.SMTP_PORT ?? 465),
+  smtpUser: process.env.SMTP_USER,
+  smtpPass: process.env.SMTP_PASS,
+  emailFrom: process.env.EMAIL_FROM ?? `Mali Personalizê <${process.env.SMTP_USER ?? "pedidos@example.com"}>`,
   storeEmail: process.env.STORE_NOTIFY_EMAIL,
   adminEmails: (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean),
   adminPassword: process.env.ADMIN_PASSWORD, // apenas modo local

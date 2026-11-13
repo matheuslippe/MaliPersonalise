@@ -35,6 +35,26 @@ export function SettingsForm({ settings }: { settings: Settings }) {
         Endereço ou instruções de retirada
         <input name="pickupAddress" defaultValue={settings.pickupAddress} className={input} />
       </label>
+      <fieldset className="space-y-5 border-t border-line pt-5">
+        <legend className="pt-5 font-serif text-[20px] text-wine">Dados da empresa</legend>
+        <p className="-mt-3 text-[13px] text-ink">Aparecem no rodapé do site, como exige a lei para lojas virtuais.</p>
+        <label className="block text-[15px] text-wine">
+          Razão social
+          <input name="legalName" defaultValue={settings.legalName} placeholder="Nome Empresarial MEI" className={input} />
+        </label>
+        <label className="block text-[15px] text-wine">
+          CNPJ
+          <input name="cnpj" defaultValue={settings.cnpj} inputMode="numeric" placeholder="00.000.000/0001-00" className={input} />
+        </label>
+        <label className="block text-[15px] text-wine">
+          Endereço da empresa
+          <input name="address" defaultValue={settings.address} placeholder="Rua, número — Cidade/UF" className={input} />
+        </label>
+        <label className="block text-[15px] text-wine">
+          E-mail de atendimento
+          <input name="contactEmail" type="email" defaultValue={settings.contactEmail} placeholder="contato@malipersonalize.com.br" className={input} />
+        </label>
+      </fieldset>
       {message && <p role="status" className="text-[14px] text-wine">{message}</p>}
       <button disabled={pending} className="h-11 rounded-full bg-rose px-8 text-white hover:bg-rose-dark disabled:opacity-60">
         {pending ? "Salvando…" : "Salvar"}

@@ -1,5 +1,5 @@
 import "server-only";
-import { Resend } from "resend";
+import nodemailer, { type Transporter } from "nodemailer";
 import type { Order } from "./types";
 import { ORDER_STATUS_LABEL } from "./types";
 import { env } from "./env";
@@ -26,13 +26,32 @@ function orderHtml(order: Order, intro: string) {
 </div>`;
 }
 
+let transporter: Transporter | null = null;
+
+/** SMTP da caixa de e-mail da Hostinger (smtp.hostinger.com:465). */
+function smtp(): Transporter | null {
+  if (!env.smtpHost || !env.smtpUser || !env.smtpPass) return null;
+  transporter ??= nodemailer.createTransport({
+    host: env.smtpHost,
+    port: env.smtpPort,
+    secure: env.smtpPort === 465,
+    auth: { user: env.smtpUser, pass: env.smtpPass },
+  });
+  return transporter;
+}
+
 async function send(to: string, subject: string, html: string) {
-  if (!env.resendApiKey) {
-    console.info(`[email] (Resend não configurado) para=${to} assunto="${subject}"`);
+  const t = smtp();
+  if (!t) {
+    console.info(`[email] (SMTP não configurado) para=${to} assunto="${subject}"`);
     return;
   }
-  const { error } = await new Resend(env.resendApiKey).emails.send({ from: env.emailFrom, to, subject, html });
-  if (error) console.error("[email] falha ao enviar", error);
+  try {
+    await t.sendMail({ from: env.emailFrom, to, subject, html, replyTo: env.storeEmail ?? undefined });
+  } catch (err) {
+    // falha de e-mail não pode derrubar o webhook de pagamento
+    console.error("[email] falha ao enviar", err);
+  }
 }
 
 export async function sendPaymentConfirmed(order: Order) {

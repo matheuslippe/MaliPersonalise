@@ -13,7 +13,7 @@ const LOCAL_ROOT = path.join(process.cwd(), ".data");
 
 export class UploadError extends Error {}
 
-/** Gera um destino para o cliente enviar a arte direto ao storage (sem passar pelo limite de corpo da Vercel). */
+/** Gera um destino para o cliente enviar a arte direto ao storage (sem passar o arquivo pelo nosso servidor). */
 export async function createCustomerUpload(input: { type: string; size: number }) {
   const ext = UPLOAD_TYPES[input.type];
   if (!ext) throw new UploadError("Formato não aceito. Envie PNG, JPG, WEBP ou PDF.");

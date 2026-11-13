@@ -2,13 +2,13 @@
 
 Site com catálogo e venda direta de papelaria personalizada (agendas, planners, bottons, lembrancinhas), seguindo o design do Figma.
 
-**Stack:** Next.js 16 (App Router) · Tailwind CSS 4 · Supabase (Postgres, Storage, Auth) · Mercado Pago Checkout Pro · Melhor Envio · Resend (e-mails) · deploy na Vercel.
+**Stack:** Next.js 16 (App Router) · Tailwind CSS 4 · Supabase (Postgres, Storage, Auth) · Mercado Pago Checkout Pro · Melhor Envio · e-mail por SMTP (Hostinger) · hospedagem Node.js na Hostinger.
 
 ## Rodando localmente
 
 ```bash
 npm install
-cp .env.example .env.local   # defina ao menos ADMIN_PASSWORD
+copy .env.example .env.local    # Windows (cmd). No Mac/Linux: cp .env.example .env.local
 npm run dev
 ```
 
@@ -19,7 +19,7 @@ Sem as chaves externas o site funciona em **modo de desenvolvimento**:
 | Supabase | dados em `.data/db.json`, com produtos de exemplo |
 | Mercado Pago | o pedido abre com o botão "Simular pagamento aprovado" |
 | Melhor Envio | cotação fictícia (PAC/SEDEX "simulado") |
-| Resend | os e-mails só aparecem no log |
+| SMTP | os e-mails só aparecem no log |
 
 Em produção (`NODE_ENV=production`) esses modos ficam bloqueados.
 
@@ -32,14 +32,35 @@ npm run lint
 npm run build
 ```
 
-## Colocando no ar
+## Colocando no ar (Hostinger)
 
-1. **Supabase**: crie o projeto e rode `supabase/migrations/20261111000000_init.sql` no SQL Editor (tabelas, RLS, buckets e categorias). Em *Authentication → Users*, crie o usuário da Mali e coloque o e-mail em `ADMIN_EMAILS`.
-2. **Mercado Pago**: em *Suas integrações*, crie a aplicação, copie o Access Token (comece com o de teste) e configure o webhook com URL `https://SEU-DOMINIO/api/webhooks/mercadopago` e o evento **Pagamentos**. Copie a assinatura secreta para `MERCADOPAGO_WEBHOOK_SECRET`.
-3. **Melhor Envio**: gere o token (comece pelo sandbox, `MELHOR_ENVIO_SANDBOX=true`) e informe o CEP de origem no painel em *Configurações*.
-4. **Resend**: verifique o domínio e defina `RESEND_API_KEY`, `EMAIL_FROM` e `STORE_NOTIFY_EMAIL`.
-5. **Vercel**: importe o repositório, cadastre as variáveis do `.env.example` e defina `NEXT_PUBLIC_SITE_URL` com o domínio `https`.
-6. No painel, cadastre os produtos com fotos, preços, opções, campos de personalização e medidas da embalagem.
+Ordem sugerida. Faça tudo primeiro em **modo teste** (credenciais de teste do Mercado Pago e `MELHOR_ENVIO_SANDBOX=true`) e só depois troque para produção.
+
+1. **Hostinger: plano e domínio.** Contrate o **Business Web Hosting** ou um plano **Cloud**. Os planos Single/Premium não rodam Node.js. Registre `malipersonalize.com.br` no CNPJ.
+2. **Hostinger: e-mail.** Em hPanel → E-mails, crie `pedidos@malipersonalize.com.br` (o site envia por ela) e, se quiser, `contato@`.
+3. **Supabase.** Crie o projeto (região *South America – São Paulo*). No SQL Editor, rode **em ordem**:
+   - `supabase/migrations/20261111000000_init.sql`
+   - `supabase/migrations/20261112000000_upload_log.sql`
+   - `supabase/seed.sql` (opcional: produtos de exemplo)
+
+   Em *Authentication → Users → Add user*, crie o login da Mali e coloque o e-mail em `ADMIN_EMAILS`.
+4. **Mercado Pago (conta no CNPJ).** Em *Suas integrações*, crie uma aplicação do tipo Checkout Pro e copie o Access Token.
+5. **Melhor Envio (conta no CNPJ).** Em *Integrações → Permissões de acesso*, gere o token com as permissões de cotação (`shipping-calculate`).
+6. **Publicar.** hPanel → *Websites* → *Adicionar site* → **Node.js web app** → importar do GitHub:
+   - Instale o app da Hostinger no GitHub e libere o repositório `MaliPersonalise`.
+   - Branch `main`, Node **22**, comando de build `npm run build`, comando de início `npm start`.
+   - Cadastre as variáveis de ambiente do `.env.example` com `NEXT_PUBLIC_SITE_URL=https://malipersonalize.com.br`.
+   - Ligue o site ao domínio. A cada `git push` na `main`, a Hostinger publica de novo.
+7. **Webhook do Mercado Pago.**
+   - URL: `https://malipersonalize.com.br/api/webhooks/mercadopago`, evento **Pagamentos**.
+   - Copie a assinatura secreta para `MERCADOPAGO_WEBHOOK_SECRET` e publique de novo.
+8. **Painel `/admin`.**
+   - Em *Configurações*: dados da empresa (razão social, CNPJ, endereço, e-mail), WhatsApp, CEP de origem.
+   - Em *Produtos*: fotos, preços e medidas.
+9. **Teste real.**
+   - Compra de valor baixo com Pix.
+   - Confira o pedido virando "Pago", o e-mail chegando e o pedido no painel.
+   - Estorne pelo Mercado Pago.
 
 ## Como funciona
 
@@ -65,4 +86,4 @@ tests/              testes unitários (Vitest)
 
 - Fotos reais: os blocos coloridos do Figma aparecem até cadastrar as fotos no painel. A foto do hero e a foto decorativa do contato estão como placeholder em `components/Landing.tsx` (props `heroImage` e `image`).
 - Revisar preços, medidas e textos dos produtos de exemplo (`lib/seed-data.ts`).
-- Política de trocas e privacidade (LGPD).
+- Revisar os textos de `app/(loja)/politicas/` (trocas e privacidade) com o contador ou advogado da Mali.

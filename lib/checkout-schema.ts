@@ -58,3 +58,15 @@ export const checkoutSchema = z.object({
   notes: z.string().trim().max(1000).default(""),
 });
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
+
+export function isValidCnpj(raw: string): boolean {
+  const c = raw.replace(/\D/g, "");
+  if (c.length !== 14 || /^(\d)\1{13}$/.test(c)) return false;
+  const digit = (len: number) => {
+    const weights = len === 12 ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    const sum = weights.reduce((acc, w, i) => acc + Number(c[i]) * w, 0);
+    const r = sum % 11;
+    return r < 2 ? 0 : 11 - r;
+  };
+  return digit(12) === Number(c[12]) && digit(13) === Number(c[13]);
+}

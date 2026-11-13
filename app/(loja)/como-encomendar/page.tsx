@@ -8,7 +8,7 @@ const FAQ = [
   { q: "Como envio minha arte ou foto?", a: "Na página do produto há um campo para enviar o arquivo (PNG, JPG, WEBP ou PDF, até 10 MB). Se preferir, descreva sua ideia nas observações e ajustamos juntas pelo WhatsApp." },
   { q: "Quais as formas de pagamento?", a: "Pix, cartão de crédito (com parcelamento) e boleto, tudo pelo ambiente seguro do Mercado Pago." },
   { q: "Qual o prazo?", a: "Cada produto mostra o prazo de produção. O prazo de entrega exibido no frete já soma a produção e o transporte." },
-  { q: "Posso trocar ou cancelar?", a: "Como os produtos são personalizados, não aceitamos troca por arrependimento depois que a produção começa. Se houver qualquer defeito, resolvemos com você." },
+  { q: "Posso trocar ou cancelar?", a: "Antes da produção, você cancela e recebe o valor integral. Depois do recebimento, vale o direito de arrependimento de 7 dias e, em caso de defeito ou erro na personalização, refazemos ou devolvemos o valor. Os detalhes estão na política de trocas." },
 ];
 
 export default function HowToOrderPage() {

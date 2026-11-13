@@ -8,6 +8,7 @@ import { requireAdmin, signIn, signOut } from "@/lib/auth";
 import { repo } from "@/lib/db";
 import { sendShipped } from "@/lib/email";
 import { slugify } from "@/lib/slug";
+import { isValidCnpj } from "@/lib/checkout-schema";
 import type { OrderStatus, Product } from "@/lib/types";
 
 export async function loginAction(_prev: string | null, formData: FormData): Promise<string | null> {
@@ -110,6 +111,10 @@ const settingsSchema = z.object({
   originCep: z.string().transform((v) => v.replace(/\D/g, "")).refine((v) => !v || v.length === 8, "CEP de origem inválido"),
   pickupEnabled: z.boolean(),
   pickupAddress: z.string().trim().max(300),
+  legalName: z.string().trim().max(160),
+  cnpj: z.string().transform((v) => v.replace(/\D/g, "")).refine((v) => !v || isValidCnpj(v), "CNPJ inválido"),
+  address: z.string().trim().max(300),
+  contactEmail: z.string().trim().toLowerCase().max(200).refine((v) => !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), "E-mail de contato inválido"),
 });
 
 export async function saveSettingsAction(_prev: string | null, formData: FormData): Promise<string | null> {
@@ -121,6 +126,10 @@ export async function saveSettingsAction(_prev: string | null, formData: FormDat
     originCep: formData.get("originCep") ?? "",
     pickupEnabled: formData.get("pickupEnabled") === "on",
     pickupAddress: formData.get("pickupAddress") ?? "",
+    legalName: formData.get("legalName") ?? "",
+    cnpj: formData.get("cnpj") ?? "",
+    address: formData.get("address") ?? "",
+    contactEmail: formData.get("contactEmail") ?? "",
   });
   if (!parsed.success) return parsed.error.issues[0].message;
   await repo().saveSettings(parsed.data);
