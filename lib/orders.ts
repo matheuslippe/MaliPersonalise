@@ -7,7 +7,7 @@ import { buildOrderItems, unitPrice } from "./pricing";
 import { quoteShipping } from "./shipping/melhorenvio";
 import { customerUploadExists } from "./storage";
 import { createPreference, getPayment } from "./payments/mercadopago";
-import { nextOrderStatus } from "./payments/status";
+import { coversOrderTotal, nextOrderStatus } from "./payments/status";
 import { sendPaymentConfirmed } from "./email";
 import type { Order, ShippingChoice } from "./types";
 
@@ -86,10 +86,22 @@ export async function createCheckout(input: CheckoutInput): Promise<{ orderId: s
 }
 
 /** Aplica um status de pagamento ao pedido (webhook ou simulação local). */
-export async function applyPaymentStatus(orderId: string, paymentId: string, mpStatus: string) {
+export async function applyPaymentStatus(
+  orderId: string,
+  paymentId: string,
+  mpStatus: string,
+  paid?: { amount: number; currency: string },
+) {
   const db = repo();
   const order = await db.getOrder(orderId);
   if (!order) return null;
+  // um pagamento "aprovado" só vale se cobrir o total do pedido
+  if (mpStatus === "approved" && paid && !coversOrderTotal(order.total, paid.amount, paid.currency)) {
+    console.error(
+      `[pagamento] valor divergente no pedido ${order.code}: pago ${paid.amount} ${paid.currency}, total ${order.total / 100} BRL (pagamento ${paymentId})`,
+    );
+    return db.updateOrder(order.id, { paymentId, paymentStatus: "valor_divergente" });
+  }
   const status = nextOrderStatus(order.status, mpStatus);
   const updated = await db.updateOrder(order.id, { status, paymentId, paymentStatus: mpStatus });
   if (updated && order.status !== "pago" && status === "pago") {
@@ -101,5 +113,8 @@ export async function applyPaymentStatus(orderId: string, paymentId: string, mpS
 export async function syncPayment(paymentId: string) {
   const payment = await getPayment(paymentId);
   if (!payment.externalReference) return null;
-  return applyPaymentStatus(payment.externalReference, payment.id, payment.status);
+  return applyPaymentStatus(payment.externalReference, payment.id, payment.status, {
+    amount: payment.amount,
+    currency: payment.currency,
+  });
 }

@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { repo } from "@/lib/db";
 import { ProductEditor } from "@/components/admin/ProductEditor";
@@ -6,6 +7,7 @@ import { deleteProductAction } from "../../../actions";
 export const metadata = { title: "Editar produto" };
 
 export default async function EditProduct({ params }: PageProps<"/admin/produtos/[id]">) {
+  await requireAdmin(); // cada página confere o login: o layout sozinho não protege
   const { id } = await params;
   const db = repo();
   const [product, categories] = await Promise.all([db.getProductById(id), db.listCategories()]);

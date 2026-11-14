@@ -39,7 +39,8 @@ Faça na ordem. Cada passo depende dos anteriores.
   1. [ ] `supabase/migrations/20261111000000_init.sql`
   2. [ ] `supabase/migrations/20261112000000_upload_log.sql`
   3. [ ] `supabase/seed.sql`: opcional, cria os 4 produtos de exemplo
-- [ ] **Authentication → Users → Add user**: criar o login da Mali (e-mail + senha) e marcar *Auto confirm*.
+- [ ] **Authentication → Users → Add user**: criar o login da Mali (e-mail + **senha forte, só dela**) e marcar *Auto confirm*.
+- [ ] 🔒 **Authentication → Sign In / Providers**: **desligar "Allow new users to sign up"**. Só os usuários criados por vocês devem existir.
 - [ ] **Project Settings → API**: copiar *Project URL*, a chave **anon/publishable** e a chave **service_role/secret**.
 
 ## 3. Mercado Pago: pagamentos (conta no CNPJ)
@@ -70,7 +71,8 @@ Faça na ordem. Cada passo depende dos anteriores.
 | Variável | Valor / de onde vem |
 | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | `https://malipersonalize.com.br` |
-| `ADMIN_SESSION_SECRET` | texto aleatório com 32+ caracteres (gere um em um gerador de senhas) |
+| `ADMIN_SESSION_SECRET` | **obrigatório**: texto aleatório com 32+ caracteres (gere um em um gerador de senhas). Sem ele o site não funciona. |
+| `TRUSTED_PROXY_HOPS` | `1` (ajuste depois pelo diagnóstico do painel, passo 7) |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API → Project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → chave **anon / publishable** |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → chave **service_role / secret**. ⚠️ Nunca compartilhe essa chave. |
@@ -104,6 +106,7 @@ Faça na ordem. Cada passo depende dos anteriores.
 Acesse `https://malipersonalize.com.br/admin` e entre com o login do passo 2.
 
 - [ ] **Configurações**: razão social, CNPJ, endereço, e-mail de atendimento, WhatsApp (com 55 + DDD), Instagram, **CEP de origem**, retirada (se houver) e mensagem da barra do topo.
+- [ ] 🔒 No fim da página de **Configurações**, veja o **Diagnóstico de segurança**: o IP mostrado tem que ser o mesmo de um site "meu ip". Se não for, aumente `TRUSTED_PROXY_HOPS` na Hostinger (2, 3…) e publique de novo, até bater.
 - [ ] **Produtos**: cadastrar ou ajustar cada produto com fotos, preço, opções, campos de personalização, prazo, peso e medidas. Se rodou o `seed.sql`, revise ou oculte os produtos de exemplo.
 
 ## 8. Teste final (com dinheiro de verdade)
@@ -118,7 +121,34 @@ Acesse `https://malipersonalize.com.br/admin` e entre com o login do passo 2.
 - [ ] **Estornar** o pagamento pelo Mercado Pago e conferir o pedido como "Cancelado".
 - [ ] Marcar um pedido como "Enviado" com código de rastreio e conferir o e-mail.
 
-## 9. Depois de no ar
+## 9. Segurança das contas
+
+- [ ] Deixar o repositório do GitHub **privado** (Settings → General → Change visibility). A Hostinger publica de repositório privado normalmente.
+- [ ] Ativar **verificação em duas etapas** na Hostinger, no GitHub, no Supabase e no Mercado Pago.
+- [ ] As chaves (`SUPABASE_SERVICE_ROLE_KEY`, token do Mercado Pago, senha do e-mail) ficam **só** nas variáveis da Hostinger. Nunca mande por WhatsApp nem coloque no código.
+- [ ] Nunca deixe o `npm run dev` acessível pela internet: o modo de desenvolvimento tem pagamento simulado.
+
+### Limpeza periódica (uma vez por mês, no SQL Editor do Supabase)
+
+Apaga o histórico de tentativas, que só serve por algumas horas:
+
+```sql
+delete from public.upload_log where created_at < now() - interval '2 days';
+```
+
+Lista artes enviadas há mais de 30 dias que não pertencem a nenhum pedido (clientes que desistiram).
+Confira a lista e apague os arquivos pelo menu **Storage → customer-uploads**:
+
+```sql
+select o.name, o.created_at
+from storage.objects o
+where o.bucket_id = 'customer-uploads'
+  and o.created_at < now() - interval '30 days'
+  and not exists (select 1 from public.orders d where d.items::text like '%' || o.name || '%')
+order by o.created_at;
+```
+
+## 10. Depois de no ar
 
 - [ ] Cadastrar o site no **Google Search Console** e enviar o sitemap: `https://malipersonalize.com.br/sitemap.xml`
 - [ ] Colocar o link do site na bio do Instagram.

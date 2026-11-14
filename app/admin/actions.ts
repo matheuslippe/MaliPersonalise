@@ -1,6 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -8,10 +9,12 @@ import { requireAdmin, signIn, signOut } from "@/lib/auth";
 import { repo } from "@/lib/db";
 import { sendShipped } from "@/lib/email";
 import { slugify } from "@/lib/slug";
+import { allow, TOO_MANY } from "@/lib/rate-limit";
 import { isValidCnpj } from "@/lib/checkout-schema";
 import type { OrderStatus, Product } from "@/lib/types";
 
 export async function loginAction(_prev: string | null, formData: FormData): Promise<string | null> {
+  if (!(await allow("login", await headers()))) return TOO_MANY;
   const error = await signIn(String(formData.get("email") ?? ""), String(formData.get("password") ?? ""));
   if (error) return error;
   redirect("/admin/pedidos");

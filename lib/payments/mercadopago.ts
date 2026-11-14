@@ -49,7 +49,13 @@ export async function createPreference(order: Order): Promise<string> {
 
 export async function getPayment(id: string) {
   const p = await new Payment(client()).get({ id });
-  return { id: String(p.id), status: p.status ?? "unknown", externalReference: p.external_reference ?? null };
+  return {
+    id: String(p.id),
+    status: p.status ?? "unknown",
+    externalReference: p.external_reference ?? null,
+    amount: p.transaction_amount ?? 0, // em reais
+    currency: p.currency_id ?? "",
+  };
 }
 
 /**
@@ -62,7 +68,6 @@ export function verifyWebhookSignature(opts: {
   requestId: string | null;
   dataId: string;
   secret: string;
-  now?: number;
 }): boolean {
   if (!opts.signature) return false;
   const parts = Object.fromEntries(
@@ -71,10 +76,8 @@ export function verifyWebhookSignature(opts: {
   const ts = parts.ts;
   const v1 = parts.v1;
   if (!ts || !v1) return false;
-  // rejeita notificações muito antigas (replay); ts vem em milissegundos
-  const age = Math.abs((opts.now ?? Date.now()) - Number(ts));
-  if (!Number.isFinite(age) || age > 10 * 60 * 1000) return false;
-
+  // Sem janela de tempo: o Mercado Pago reenvia avisos por horas e um reenvio não pode ser recusado.
+  // Repetir um aviso antigo é inofensivo, porque o status sempre vem da API e a atualização é idempotente.
   let manifest = `id:${opts.dataId.toLowerCase()};`;
   if (opts.requestId) manifest += `request-id:${opts.requestId};`;
   manifest += `ts:${ts};`;

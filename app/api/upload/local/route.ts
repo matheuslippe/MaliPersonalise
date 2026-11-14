@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { hasSupabase } from "@/lib/env";
+import { hasSupabase, localAdminAllowed } from "@/lib/env";
 import { hmac, safeEqual } from "@/lib/sign";
 import { UploadError, writeLocalCustomerUpload } from "@/lib/storage";
 
 /** Destino de upload apenas no modo local (sem Supabase). */
 export async function PUT(req: Request) {
-  if (hasSupabase) return new NextResponse(null, { status: 404 });
+  if (hasSupabase || !localAdminAllowed) return new NextResponse(null, { status: 404 });
   const url = new URL(req.url);
   const path = url.searchParams.get("path") ?? "";
   const token = url.searchParams.get("token") ?? "";

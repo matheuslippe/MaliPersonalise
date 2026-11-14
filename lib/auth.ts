@@ -2,7 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
-import { env, hasSupabase } from "./env";
+import { env, hasSupabase, localAdminAllowed } from "./env";
 import { hmac, safeEqual } from "./sign";
 
 const LOCAL_COOKIE = "mali_admin";
@@ -28,8 +28,11 @@ export async function getAdminEmail(): Promise<string | null> {
   if (hasSupabase) {
     const { data } = await (await supabaseServer()).auth.getUser();
     const email = data.user?.email?.toLowerCase();
-    return email && env.adminEmails.includes(email) ? email : null;
+    // exige e-mail confirmado: impede que alguém se cadastre com o e-mail de um admin ainda não criado
+    if (!email || !data.user?.email_confirmed_at) return null;
+    return env.adminEmails.includes(email) ? email : null;
   }
+  if (!localAdminAllowed) return null;
   const value = (await cookies()).get(LOCAL_COOKIE)?.value;
   if (!value) return null;
   const [exp, sig] = value.split(".");
@@ -46,9 +49,16 @@ export async function requireAdmin(): Promise<string> {
 export async function signIn(email: string, password: string): Promise<string | null> {
   if (hasSupabase) {
     if (!env.adminEmails.includes(email.toLowerCase())) return "E-mail ou senha incorretos.";
-    const { error } = await (await supabaseServer()).auth.signInWithPassword({ email, password });
-    return error ? "E-mail ou senha incorretos." : null;
+    const supabase = await supabaseServer();
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return "E-mail ou senha incorretos.";
+    if (!data.user?.email_confirmed_at) {
+      await supabase.auth.signOut();
+      return "E-mail ou senha incorretos.";
+    }
+    return null;
   }
+  if (!localAdminAllowed) return "Painel indisponível: o Supabase não está configurado.";
   if (!env.adminPassword) return "Defina ADMIN_PASSWORD no .env.local para usar o painel em modo local.";
   if (!safeEqual(password, env.adminPassword)) return "Senha incorreta.";
   const exp = String(Date.now() + SESSION_MS);

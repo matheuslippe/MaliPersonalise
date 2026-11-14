@@ -2,10 +2,13 @@ import { NextResponse } from "next/server";
 import { repo } from "@/lib/db";
 import { shippingQuoteSchema } from "@/lib/checkout-schema";
 import { quoteShipping } from "@/lib/shipping/melhorenvio";
+import { allow, TOO_MANY } from "@/lib/rate-limit";
+import { readJson } from "@/lib/http";
 
 export async function POST(req: Request) {
-  const parsed = shippingQuoteSchema.safeParse(await req.json().catch(() => null));
+  const parsed = shippingQuoteSchema.safeParse(await readJson(req, 20_000));
   if (!parsed.success) return NextResponse.json({ error: "CEP inválido" }, { status: 400 });
+  if (!(await allow("frete", req.headers))) return NextResponse.json({ error: TOO_MANY }, { status: 429 });
 
   const db = repo();
   const [products, settings] = await Promise.all([

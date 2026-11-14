@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createHmac } from "node:crypto";
-import { nextOrderStatus } from "@/lib/payments/status";
+import { coversOrderTotal, nextOrderStatus } from "@/lib/payments/status";
 import { verifyWebhookSignature } from "@/lib/payments/mercadopago";
 
 describe("nextOrderStatus", () => {
@@ -29,12 +29,28 @@ describe("verifyWebhookSignature", () => {
 
   it("aceita assinatura válida", () => {
     const v1 = sign("123", "req-1", now);
-    expect(verifyWebhookSignature({ signature: `ts=${now},v1=${v1}`, requestId: "req-1", dataId: "123", secret, now })).toBe(true);
+    expect(verifyWebhookSignature({ signature: `ts=${now},v1=${v1}`, requestId: "req-1", dataId: "123", secret })).toBe(true);
   });
-  it("rejeita assinatura adulterada, ausente ou antiga", () => {
+  it("rejeita assinatura adulterada, ausente ou com outro segredo", () => {
     const v1 = sign("123", "req-1", now);
-    expect(verifyWebhookSignature({ signature: `ts=${now},v1=${v1}`, requestId: "req-1", dataId: "999", secret, now })).toBe(false);
-    expect(verifyWebhookSignature({ signature: null, requestId: "req-1", dataId: "123", secret, now })).toBe(false);
-    expect(verifyWebhookSignature({ signature: `ts=${now},v1=${v1}`, requestId: "req-1", dataId: "123", secret, now: now + 60 * 60 * 1000 })).toBe(false);
+    expect(verifyWebhookSignature({ signature: `ts=${now},v1=${v1}`, requestId: "req-1", dataId: "999", secret })).toBe(false);
+    expect(verifyWebhookSignature({ signature: `ts=${now + 1},v1=${v1}`, requestId: "req-1", dataId: "123", secret })).toBe(false);
+    expect(verifyWebhookSignature({ signature: null, requestId: "req-1", dataId: "123", secret })).toBe(false);
+    expect(verifyWebhookSignature({ signature: `ts=${now},v1=${v1}`, requestId: "req-1", dataId: "123", secret: "outro" })).toBe(false);
+  });
+  it("aceita reenvio antigo do Mercado Pago (sem janela de tempo)", () => {
+    const old = now - 6 * 60 * 60 * 1000;
+    expect(verifyWebhookSignature({ signature: `ts=${old},v1=${sign("123", "req-1", old)}`, requestId: "req-1", dataId: "123", secret })).toBe(true);
+  });
+});
+
+describe("coversOrderTotal", () => {
+  it("só aceita pagamento em BRL que cobre o total", () => {
+    expect(coversOrderTotal(10490, 104.9, "BRL")).toBe(true);
+    expect(coversOrderTotal(10490, 104.89, "BRL")).toBe(false);
+    expect(coversOrderTotal(10490, 1, "BRL")).toBe(false);
+    expect(coversOrderTotal(10490, 104.9, "USD")).toBe(false);
+    expect(coversOrderTotal(10490, NaN, "BRL")).toBe(false);
+    expect(coversOrderTotal(1990, 19.9, "BRL")).toBe(true); // 19.9 * 100 = 1989.9999…
   });
 });

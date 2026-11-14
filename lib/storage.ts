@@ -2,7 +2,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { hasSupabase } from "./env";
+import { hasSupabase, localAdminAllowed } from "./env";
 import { supabaseAdmin } from "./db/supabase";
 import { hmac } from "./sign";
 import { UPLOAD_MAX_BYTES, UPLOAD_PATH_RE, UPLOAD_TYPES } from "./uploads";
@@ -12,6 +12,11 @@ const PRODUCT_BUCKET = "product-images";
 const LOCAL_ROOT = path.join(process.cwd(), ".data");
 
 export class UploadError extends Error {}
+
+/** O armazenamento em disco só existe em desenvolvimento. Em produção, sem Supabase, nada é gravado. */
+function assertLocalStorageAllowed() {
+  if (!localAdminAllowed) throw new Error("Supabase não configurado: armazenamento de arquivos indisponível.");
+}
 
 /** Gera um destino para o cliente enviar a arte direto ao storage (sem passar o arquivo pelo nosso servidor). */
 export async function createCustomerUpload(input: { type: string; size: number }) {
@@ -26,6 +31,7 @@ export async function createCustomerUpload(input: { type: string; size: number }
     if (error || !data) throw new Error(error?.message ?? "Falha ao preparar upload");
     return { path: filePath, uploadUrl: data.signedUrl };
   }
+  assertLocalStorageAllowed();
   const token = hmac(`upload:${filePath}`);
   return {
     path: filePath,
@@ -34,6 +40,7 @@ export async function createCustomerUpload(input: { type: string; size: number }
 }
 
 export async function writeLocalCustomerUpload(filePath: string, body: ArrayBuffer) {
+  assertLocalStorageAllowed();
   if (!UPLOAD_PATH_RE.test(filePath)) throw new UploadError("Caminho inválido");
   if (body.byteLength > UPLOAD_MAX_BYTES) throw new UploadError("O arquivo deve ter até 10 MB.");
   const dest = path.join(LOCAL_ROOT, CUSTOMER_BUCKET, filePath);
@@ -66,7 +73,9 @@ export async function customerUploadExists(filePath: string): Promise<boolean> {
 /** URL temporária para o admin baixar a arte do cliente. */
 export async function customerUploadUrl(filePath: string): Promise<string> {
   if (hasSupabase) {
-    const { data, error } = await supabaseAdmin().storage.from(CUSTOMER_BUCKET).createSignedUrl(filePath, 60 * 60);
+    const { data, error } = await supabaseAdmin().storage.from(CUSTOMER_BUCKET).createSignedUrl(filePath, 60 * 60, {
+      download: filePath.endsWith(".pdf"), // PDF de cliente é baixado, não aberto dentro do painel
+    });
     if (error || !data) throw new Error(error?.message ?? "Falha ao gerar link");
     return data.signedUrl;
   }
@@ -89,6 +98,7 @@ export async function saveProductImage(file: File): Promise<string> {
     if (error) throw new Error(error.message);
     return bucket.getPublicUrl(name).data.publicUrl;
   }
+  assertLocalStorageAllowed();
   const dest = path.join(LOCAL_ROOT, "media", name);
   await fs.mkdir(path.dirname(dest), { recursive: true });
   await fs.writeFile(dest, Buffer.from(bytes));
