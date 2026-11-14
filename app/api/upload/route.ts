@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createCustomerUpload, UploadError } from "@/lib/storage";
-import { allowUpload, clientKey } from "@/lib/rate-limit";
+import { allow } from "@/lib/rate-limit";
+import { readJson } from "@/lib/http";
 
 const schema = z.object({ type: z.string().max(100), size: z.number().int().positive() });
 
 export async function POST(req: Request) {
-  const parsed = schema.safeParse(await req.json().catch(() => null));
+  const parsed = schema.safeParse(await readJson(req, 2_000));
   if (!parsed.success) return NextResponse.json({ error: "Requisição inválida" }, { status: 400 });
-  if (!(await allowUpload(clientKey(req)))) {
+  if (!(await allow("upload", req.headers))) {
     return NextResponse.json(
       { error: "Muitos envios em pouco tempo. Aguarde um pouco ou fale com a gente pelo WhatsApp." },
       { status: 429 },

@@ -18,8 +18,24 @@ export const env = {
   storeEmail: process.env.STORE_NOTIFY_EMAIL,
   adminEmails: (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean),
   adminPassword: process.env.ADMIN_PASSWORD, // apenas modo local
-  sessionSecret: process.env.ADMIN_SESSION_SECRET ?? "dev-only-secret-change-me",
+  /** Quantos proxies da hospedagem ficam na frente do site (para achar o IP real do visitante). */
+  trustedProxyHops: Math.max(1, Number(process.env.TRUSTED_PROXY_HOPS ?? 1) || 1),
+  /**
+   * Segredo que assina o cookie do painel local, os links de upload e o hash de IP.
+   * Em produção não existe valor padrão: sem um segredo forte o site se recusa a usá-lo.
+   */
+  get sessionSecret(): string {
+    const secret = process.env.ADMIN_SESSION_SECRET ?? "";
+    if (secret.length >= 32 && !secret.startsWith("troque")) return secret;
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("ADMIN_SESSION_SECRET ausente ou fraco: defina um texto aleatório com 32+ caracteres.");
+    }
+    return secret || "dev-only-secret-change-me";
+  },
 };
+
+/** O login por ADMIN_PASSWORD só existe em desenvolvimento (ou com ALLOW_LOCAL_DB=true, por conta e risco). */
+export const localAdminAllowed = process.env.NODE_ENV !== "production" || process.env.ALLOW_LOCAL_DB === "true";
 
 export const hasSupabase = Boolean(env.supabaseUrl && env.supabaseAnonKey && env.supabaseServiceKey);
 export const hasMercadoPago = Boolean(env.mpAccessToken);

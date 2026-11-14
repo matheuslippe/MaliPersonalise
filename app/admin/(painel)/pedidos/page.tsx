@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import Link from "next/link";
 import { repo } from "@/lib/db";
 import { formatBRL } from "@/lib/money";
@@ -17,6 +18,7 @@ export const STATUS_STYLE: Record<OrderStatus, string> = {
 };
 
 export default async function OrdersPage({ searchParams }: PageProps<"/admin/pedidos">) {
+  await requireAdmin(); // cada página confere o login: o layout sozinho não protege
   const { status } = await searchParams;
   const current = typeof status === "string" && status in ORDER_STATUS_LABEL ? (status as OrderStatus) : undefined;
   const orders = await repo().listOrders({ status: current });

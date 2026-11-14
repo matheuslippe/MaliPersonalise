@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { verifyWebhookSignature } from "@/lib/payments/mercadopago";
 import { syncPayment } from "@/lib/orders";
+import { readJson } from "@/lib/http";
 
 export async function POST(req: Request) {
   const url = new URL(req.url);
-  const body = (await req.json().catch(() => ({}))) as { type?: string; action?: string; data?: { id?: string } };
+  const body = ((await readJson(req, 20_000)) ?? {}) as { type?: string; action?: string; data?: { id?: string } };
   const dataId = url.searchParams.get("data.id") ?? body.data?.id ?? "";
   const type = url.searchParams.get("type") ?? body.type;
 

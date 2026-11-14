@@ -43,7 +43,7 @@ function smtp(): Transporter | null {
 async function send(to: string, subject: string, html: string) {
   const t = smtp();
   if (!t) {
-    console.info(`[email] (SMTP não configurado) para=${to} assunto="${subject}"`);
+    console.info(`[email] (SMTP não configurado) para=${to.replace(/^(.).*(@.*)$/, "$1***$2")} assunto="${subject}"`);
     return;
   }
   try {

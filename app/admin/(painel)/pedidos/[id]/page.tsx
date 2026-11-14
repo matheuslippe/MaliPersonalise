@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { repo } from "@/lib/db";
@@ -13,6 +14,7 @@ const fmtCpf = (v: string) => v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$
 const fmtPhone = (v: string) => v.replace(/(\d{2})(\d{4,5})(\d{4})/, "($1) $2-$3");
 
 export default async function OrderDetail({ params }: PageProps<"/admin/pedidos/[id]">) {
+  await requireAdmin(); // cada página confere o login: o layout sozinho não protege
   const { id } = await params;
   const order = await repo().getOrder(id);
   if (!order) notFound();

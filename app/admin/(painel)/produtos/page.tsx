@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import Link from "next/link";
 import { repo } from "@/lib/db";
 import { formatBRL } from "@/lib/money";
@@ -6,6 +7,7 @@ import { ProductImage } from "@/components/ProductImage";
 export const metadata = { title: "Produtos" };
 
 export default async function AdminProducts() {
+  await requireAdmin(); // cada página confere o login: o layout sozinho não protege
   const db = repo();
   const [products, categories] = await Promise.all([db.listProducts({ includeInactive: true }), db.listCategories()]);
   const catName = new Map(categories.map((c) => [c.id, c.name]));

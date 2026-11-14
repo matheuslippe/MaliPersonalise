@@ -37,6 +37,9 @@ check("Modo de arquivo local desligado", v("ALLOW_LOCAL_DB") !== "true", "remova
 check("ADMIN_SESSION_SECRET forte", v("ADMIN_SESSION_SECRET").length >= 32 && !v("ADMIN_SESSION_SECRET").startsWith("troque"),
   "texto aleatório com 32+ caracteres (protege links de upload e o limite de envios)");
 
+check("TRUSTED_PROXY_HOPS numérico (ou vazio)", /^\d*$/.test(v("TRUSTED_PROXY_HOPS")), "use 1, 2, 3… conforme o diagnóstico do painel");
+check("ADMIN_PASSWORD vazio em produção", !v("ADMIN_PASSWORD"), "o login de produção é pelo Supabase; remova a senha local", "aviso");
+
 group = "Supabase";
 check("NEXT_PUBLIC_SUPABASE_URL", /^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(v("NEXT_PUBLIC_SUPABASE_URL")),
   "Project Settings → API → Project URL (https://xxxx.supabase.co)");

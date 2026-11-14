@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { checkoutSchema } from "@/lib/checkout-schema";
 import { CheckoutError, createCheckout } from "@/lib/orders";
+import { allow, TOO_MANY } from "@/lib/rate-limit";
+import { readJson } from "@/lib/http";
 
 const FIELD_MAP: Record<string, string> = {
   "customer.name": "name", "customer.email": "email", "customer.phone": "phone", "customer.cpf": "cpf",
@@ -9,7 +11,7 @@ const FIELD_MAP: Record<string, string> = {
 };
 
 export async function POST(req: Request) {
-  const parsed = checkoutSchema.safeParse(await req.json().catch(() => null));
+  const parsed = checkoutSchema.safeParse(await readJson(req));
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {};
     const errors: string[] = [];
@@ -21,6 +23,8 @@ export async function POST(req: Request) {
     if (Object.keys(fieldErrors).length) errors.unshift("Confira os campos destacados.");
     return NextResponse.json({ fieldErrors, errors: [...new Set(errors)] }, { status: 400 });
   }
+  // conta só pedidos com dados válidos, para não punir quem errou um campo
+  if (!(await allow("checkout", req.headers))) return NextResponse.json({ errors: [TOO_MANY] }, { status: 429 });
   try {
     return NextResponse.json(await createCheckout(parsed.data));
   } catch (err) {

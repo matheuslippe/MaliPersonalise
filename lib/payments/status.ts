@@ -17,3 +17,8 @@ export function nextOrderStatus(current: OrderStatus, mpStatus: string): OrderSt
   // pending, in_process, authorized, rejected (cliente pode tentar de novo)
   return current;
 }
+
+/** O valor pago (em reais, como vem do Mercado Pago) cobre o total do pedido (em centavos)? */
+export function coversOrderTotal(totalCents: number, paidAmount: number, currency: string): boolean {
+  return currency === "BRL" && Number.isFinite(paidAmount) && Math.round(paidAmount * 100) >= totalCents;
+}
